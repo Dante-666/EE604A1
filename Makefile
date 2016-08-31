@@ -2,7 +2,7 @@
 CC = g++
 
 # C++ Compiler flags
-CXXFLAGS = -c -Wall -g
+CXXFLAGS = -Wall -g
 
 # Include and Library directories
 LIB = -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_imgcodecs
@@ -11,7 +11,7 @@ LIB = -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_imgcodecs
 all: run
 
 run: clean
-	$(CC) $(LIB) main.cc -o run
+	$(CC) $(LIB) $(CXXFLAGS) main.cc -o run
 
 clean:
 	rm run
