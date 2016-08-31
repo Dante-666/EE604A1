@@ -9,39 +9,64 @@
 #include <boost/random.hpp>
 #include <boost/random/normal_distribution.hpp>
 
-#define MU 0
-#define SD sqrt(0.02)
+using namespace std;
+using namespace boost;
+using namespace cv;
+
+int addGaussianNoise(Mat *src, Mat *dest, double mean, double variance) {
+
+    if (src->rows != dest->rows || src->cols != dest->cols) {
+        cout<<"src and dest dimension mismatch..."<<endl;
+        return -1;
+    }
+    
+    mt19937 rng;
+
+    chrono::time_point<std::chrono::system_clock> now = chrono::system_clock::now();
+    auto duration = now.time_since_epoch();
+    auto seed = chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+    
+    rng.seed(seed);
+
+    normal_distribution<double> kernel (mean, sqrt(variance));
+    variate_generator<mt19937&, normal_distribution<>> gauss(rng, kernel);
+
+    for (int i = 0; i < dest->rows; i++) {
+        for(int j = 0; j < dest->cols; j++) {
+            dest->at<float>(i, j) += static_cast<float>(gauss());
+        }
+    }
+
+    return 0;
+}
+
+void displayImage(Mat img) {
+    cout<<"Close the window to continue..."<<endl;
+
+    namedWindow("Debug_Win", WINDOW_AUTOSIZE);
+    imshow("Debug_Win", img);
+
+    waitKey(0);
+}
 
 int main(int argc, char** argv) {
     /**
      * Read the image in memory
      */
     if (argc < 2 || argc > 2) {
-        std::cout<<"No filename was given...exiting..."<<std::endl;
+        cout<<"No filename was given...exiting..."<<endl;
         return -1;
     }
 
-    cv::Mat img = cv::imread(argv[1], 0);
-    /**
-     * This is CV_8U type.
-     * std::cout<<img.type()<<std::endl;
-     */
-    //cv::Mat noise = cv::Mat::zeros(img.size(), CV_8U);
+    Mat img = imread(argv[1], CV_LOAD_IMAGE_GRAYSCALE);
 
-    boost::mt19937 rng;// = new boost::mt19937();
+    Mat noisy = Mat::zeros(img.rows, img.cols, CV_32F);
 
-    std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
-    auto duration = now.time_since_epoch();
-    auto seed = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+    normalize(img, noisy, 0.f, 1.f, NORM_MINMAX, CV_32F);
+
+    if (addGaussianNoise(&img, &noisy, 0.f, 0.02f)) return -1;
+
+    displayImage(noisy);
     
-    rng.seed(seed);
-
-    boost::normal_distribution<double> kernel (MU, SD);
-    //double a = SD;
-    //std::cout<<a<<std::endl;
-    boost::variate_generator<boost::mt19937&, boost::normal_distribution<>> gauss(rng, kernel);
-
-    double x = gauss();
-    std::cout<<x<<std::endl;
     return 0;
 }
